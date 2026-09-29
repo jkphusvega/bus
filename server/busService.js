@@ -213,15 +213,11 @@ export async function searchBusStations(query, apiKey) {
 
   const safeKey = getSafeServiceKey(apiKey);
 
-  // 1. 국토교통부 TAGO 정류소 검색 시도
+  // 1. 국토교통부 TAGO 정류소 검색 시도 (BusSttnInfoInqireService)
   try {
     const isArsNumber = /^\d{5}$/.test(q);
-    let tagoUrl = "";
-    if (isArsNumber) {
-      tagoUrl = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoSearch?serviceKey=${safeKey.encodedKey}&cityCode=22&arsNo=${q}&_type=json`;
-    } else {
-      tagoUrl = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnList?serviceKey=${safeKey.encodedKey}&cityCode=22&nodeNm=${encodeURIComponent(query.trim())}&_type=json`;
-    }
+    const paramKey = isArsNumber ? "nodeNo" : "nodeNm";
+    const tagoUrl = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${safeKey.encodedKey}&cityCode=23&${paramKey}=${encodeURIComponent(query.trim())}&_type=json`;
 
     const tagoRes = await fetch(tagoUrl);
     if (tagoRes.ok) {
