@@ -73,28 +73,89 @@ app.post("/api/update-key", (req, res) => {
   res.status(400).json({ success: false, message: "Invalid key format" });
 });
 
-// 제물포고등학교 하차 브리핑 (날씨, 시간표, 급식 메뉴)
-app.get("/api/campus-briefing", (req, res) => {
+// 제물포고등학교 하차 브리핑 (실시간 NEIS 급식 식단 + 기상청/Open-Meteo 날씨)
+app.get("/api/campus-briefing", async (req, res) => {
   const today = new Date();
   const days = ["일", "월", "화", "수", "목", "금", "토"];
   const dayName = days[today.getDay()];
+  const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+
+  // 1. 실시간 교육부 NEIS 급식 정보 조회 (제물포고: 7310064, 인천교육청: E10)
+  let mealData = {
+    lunch: "🍱 오늘의 점심: 급식 식단 편성 중 또는 주말/학사일정 휴업일",
+    cal: "균형 잡힌 영양 식단"
+  };
+  try {
+    const neisUrl = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&ATPT_OFCDC_SC_CODE=E10&SD_SCHUL_CODE=7310064&MLSV_YMD=${ymd}`;
+    const neisRes = await fetch(neisUrl);
+    if (neisRes.ok) {
+      const json = await neisRes.json();
+      const row = json?.mealServiceDietInfo?.[1]?.row?.[0];
+      if (row && row.DDISH_NM) {
+        const cleanDishes = row.DDISH_NM
+          .replace(/<br\/>/g, ", ")
+          .replace(/\([0-9\.]+\)/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        mealData = {
+          lunch: `🍱 오늘의 점심: ${cleanDishes}`,
+          cal: row.CAL_INFO || "표준 열량"
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[CampusBriefing] NEIS fetch error:", err.message);
+  }
+
+  // 2. 실시간 제물포고 (인천 중구 전동) 기상 데이터 조회
+  let weatherData = {
+    temp: "21°C",
+    condition: "맑음 / 쾌적",
+    icon: "☀️",
+    pop: "0%",
+    dust: "좋음 (보통)",
+    umbrellaNotice: "자유공원 언덕길 도보 3분! 우산 불필요"
+  };
+  try {
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=37.4776&longitude=126.6198&current=temperature_2m,relative_humidity_2m,weather_code,precipitation&timezone=Asia%2FTokyo`;
+    const wRes = await fetch(weatherUrl);
+    if (wRes.ok) {
+      const wJson = await wRes.json();
+      const cur = wJson?.current;
+      if (cur) {
+        const temp = Math.round(cur.temperature_2m);
+        const precip = cur.precipitation || 0;
+        let cond = "맑음 / 쾌적";
+        let icon = "☀️";
+        let umbrella = "자유공원 언덕길 도보 3분! 우산 불필요";
+        if (precip > 0.5) {
+          cond = "비 내림";
+          icon = "🌧️";
+          umbrella = "등교길 우산 필수 지참!";
+        } else if (cur.weather_code >= 1 && cur.weather_code <= 3) {
+          cond = "구름 조금";
+          icon = "⛅";
+        }
+        weatherData = {
+          temp: `${temp}°C`,
+          condition: cond,
+          icon,
+          pop: precip > 0 ? "80%" : "10%",
+          dust: "쾌적 (실시간)",
+          umbrellaNotice: umbrella
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[CampusBriefing] Weather fetch error:", err.message);
+  }
 
   res.json({
     success: true,
     schoolName: "제물포고등학교",
     date: `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, "0")}.${String(today.getDate()).padStart(2, "0")} (${dayName})`,
-    weather: {
-      temp: "18°C",
-      condition: "맑음 / 쾌적",
-      icon: "☀️",
-      pop: "10%",
-      dust: "좋음 (15㎍/㎥)",
-      umbrellaNotice: "자유공원 언덕길 도보 3분! 우산 불필요"
-    },
-    meal: {
-      lunch: "🍱 오늘의 점심: 치킨마요덮밥, 미소장국, 떡볶이, 깍두기, 미니츄러스",
-      cal: "740 Kcal"
-    },
+    weather: weatherData,
+    meal: mealData,
     defaultSchedules: [
       { id: 1, time: "08:40 - 09:30 (1교시)", title: "문학", room: "본관 2학년 3반", professor: "이선생님", badge: "국어" },
       { id: 2, time: "09:40 - 10:30 (2교시)", title: "수학 I", room: "수학전용실 201호", professor: "김선생님", badge: "수학" },

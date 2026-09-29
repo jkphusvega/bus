@@ -91,10 +91,10 @@
         <article class="station-card">
           <div class="station-top">
             <div>
-              <div class="station-name" id="current-station-name">인하대후문</div>
-              <div class="station-dir" id="current-station-dir">주안역 방면 · 인천광역시</div>
+              <div class="station-name" id="current-station-name">실시간 정류소 연결 중...</div>
+              <div class="station-dir" id="current-station-dir">인천광역시 버스정보시스템(BIS) 연동</div>
             </div>
-            <span class="station-ars" id="current-station-ars">37155</span>
+            <span class="station-ars" id="current-station-ars">--</span>
           </div>
           <button class="btn-secondary" id="btn-change-station" style="margin-top: 10px; width: 100%; font-size: 11px;">
             📍 정류장 변경 (인천시 내)
@@ -104,14 +104,14 @@
         <!-- HERO 빠른 버스 (가장 먼저 탈 버스) -->
         <article class="hero-bus-card" id="hero-bus-card">
           <div class="hero-header">
-            <div class="bus-badge-lg" id="hero-bus-no">511번</div>
-            <span class="meta-chip highlight" id="hero-bus-status">도착 곧 임박</span>
+            <div class="bus-badge-lg" id="hero-bus-no">조회 중</div>
+            <span class="meta-chip highlight" id="hero-bus-status">실시간 연동</span>
           </div>
 
           <div class="hero-countdown-wrap">
             <div class="countdown-digits">
-              <span class="time-main" id="hero-time-text">2분 45초</span>
-              <span class="time-detail" id="hero-stops-text">2번째 전 정류장 (인하대병원)</span>
+              <span class="time-main" id="hero-time-text">--분 --초</span>
+              <span class="time-detail" id="hero-stops-text">실시간 버스 도착 데이터 수신 중...</span>
             </div>
 
             <!-- 원형 카운트다운 게이지 -->
@@ -120,15 +120,15 @@
                 <circle class="circle-bg" cx="45" cy="45" r="38"></circle>
                 <circle class="circle-bar" id="hero-circle-bar" cx="45" cy="45" r="38"></circle>
               </svg>
-              <div class="circle-label" id="hero-circle-pct">75%</div>
+              <div class="circle-label" id="hero-circle-pct">--</div>
             </div>
           </div>
 
           <!-- 버스 상세 메타 칩 -->
           <div class="meta-chips">
-            <span class="meta-chip" id="hero-bus-plate">인천70바 1284</span>
-            <span class="meta-chip" id="hero-bus-lowfloor">♿ 저상버스</span>
-            <span class="meta-chip" id="hero-bus-crowd">👥 보통 (여유)</span>
+            <span class="meta-chip" id="hero-bus-plate">차량정보 수신 중</span>
+            <span class="meta-chip" id="hero-bus-lowfloor">♿ 저상버스 여부</span>
+            <span class="meta-chip" id="hero-bus-crowd">👥 실시간 혼잡도</span>
           </div>
 
           <div style="margin-top: 16px; display: flex; gap: 8px;">
