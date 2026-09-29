@@ -68,7 +68,7 @@ app.post("/api/update-key", (req, res) => {
   res.status(400).json({ success: false, message: "Invalid key format" });
 });
 
-// 캠퍼스 브리핑 (날씨 및 학사/시간표)
+// 제물포고등학교 하차 브리핑 (날씨, 시간표, 급식 메뉴)
 app.get("/api/campus-briefing", (req, res) => {
   const today = new Date();
   const days = ["일", "월", "화", "수", "목", "금", "토"];
@@ -76,23 +76,33 @@ app.get("/api/campus-briefing", (req, res) => {
 
   res.json({
     success: true,
+    schoolName: "제물포고등학교",
     date: `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, "0")}.${String(today.getDate()).padStart(2, "0")} (${dayName})`,
     weather: {
-      temp: "19°C",
+      temp: "18°C",
       condition: "맑음 / 쾌적",
       icon: "☀️",
       pop: "10%",
-      dust: "좋음 (18㎍/㎥)",
-      umbrellaNotice: "우산이 필요 없는 맑은 날씨입니다."
+      dust: "좋음 (15㎍/㎥)",
+      umbrellaNotice: "자유공원 언덕길 도보 3분! 우산 불필요"
+    },
+    meal: {
+      lunch: "🍱 오늘의 점심: 치킨마요덮밥, 미소장국, 떡볶이, 깍두기, 미니츄러스",
+      cal: "740 Kcal"
     },
     defaultSchedules: [
-      { id: 1, time: "09:30 - 10:45", title: "알고리즘 및 문제해결", room: "공학관 402호", professor: "김교수", badge: "전공필수" },
-      { id: 2, time: "11:00 - 12:15", title: "모바일 클라우드 시스템", room: "IT융합관 205호", professor: "박교수", badge: "전공선택" },
-      { id: 3, time: "13:30 - 15:00", title: "팀 프로젝트 멘토링", room: "학술정보관 스터디룸 B", professor: "이멘토", badge: "연구" }
+      { id: 1, time: "08:40 - 09:30 (1교시)", title: "문학", room: "본관 2학년 3반", professor: "이선생님", badge: "국어" },
+      { id: 2, time: "09:40 - 10:30 (2교시)", title: "수학 I", room: "수학전용실 201호", professor: "김선생님", badge: "수학" },
+      { id: 3, time: "10:40 - 11:30 (3교시)", title: "영어 회화", room: "어학실 B", professor: "박선생님", badge: "영어" },
+      { id: 4, time: "11:40 - 12:30 (4교시)", title: "물리학 I", room: "과학실험실", professor: "최선생님", badge: "탐구" },
+      { id: 5, time: "13:30 - 14:20 (5교시)", title: "한국사", room: "본관 2학년 3반", professor: "정선생님", badge: "사회" },
+      { id: 6, time: "14:30 - 15:20 (6교시)", title: "체육 (농구)", room: "운동장 / 체육관", professor: "강선생님", badge: "체육" },
+      { id: 7, time: "15:30 - 16:20 (7교시)", title: "동아리 활동", room: "컴퓨터실", professor: "담당교사", badge: "창체" }
     ],
     notices: [
-      "📌 알고리즘 2차 과제 마감: 오늘 23:59까지 (LMS 제출)",
-      "☕ 학생회관 카페 텀블러 할인 데이 (300원 할인)"
+      "📌 제물포고 2학기 중간고사 D-12 (자습실 22:00까지 개방)",
+      "🍱 점심 급식: 4교시 종료 후 12:30부터 3층 급식실 이용",
+      "👟 6교시 체육 수업 시 실내 체육관 운동화 필수 착용"
     ]
   });
 });

@@ -10,13 +10,13 @@ const savedSchedules = localStorage.getItem("galaxy_bus_schedules");
 
 const state = {
   currentMode: "wake",
-  currentStationId: savedStationId || "163000155", // 인하대후문 (기본값)
-  targetStationId: savedTarget || "164000301",     // 인천대학교자연과학대학 (목적지)
+  currentStationId: savedStationId || "161000101", // 동인천역북광장 (제물포고 통학)
+  targetStationId: savedTarget || "161000193",     // 송월아파트(제물포고교)
   currentStation: savedStation ? JSON.parse(savedStation) : {
-    bstopId: "163000155",
-    bstopNm: "인하대후문",
-    arsId: "37155",
-    dirDesc: "주안역 방면"
+    bstopId: "161000101",
+    bstopNm: "동인천역북광장",
+    arsId: "36101",
+    dirDesc: "제물포고등학교 방면"
   },
   schedules: savedSchedules ? JSON.parse(savedSchedules) : null,
   arrivals: [],
@@ -419,7 +419,12 @@ async function loadCampusBriefing() {
     const data = await res.json();
 
     if (data.success) {
-      if (dateEl) dateEl.textContent = `${data.date} · 오늘의 캠퍼스 브리핑`;
+      if (dateEl) dateEl.textContent = `${data.date} · 오늘의 제물포고 일과표 & 급식 브리핑`;
+
+      const mealEl = document.getElementById("meal-menu-text");
+      if (mealEl && data.meal) {
+        mealEl.textContent = data.meal.lunch.replace("🍱 오늘의 점심: ", "");
+      }
 
       // 사용자가 직접 저장한 시간표가 있으면 우선 사용
       const activeSchedules = state.schedules && state.schedules.length > 0 
