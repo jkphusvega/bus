@@ -27,51 +27,59 @@ function getSafeServiceKey(apiKey) {
  * 전국 표준, 지자체 다운 방지 1순위
  */
 async function fetchTagoArrivals(nodeId, safeKey) {
-  // nodeId 포맷 정규화: 'ICB' 접두어가 없으면 추가 (인천: ICB + bstopId)
-  let tagoNodeId = nodeId;
-  if (!tagoNodeId.startsWith("ICB") && !isNaN(tagoNodeId)) {
-    tagoNodeId = `ICB${nodeId}`;
+  const cleanId = String(nodeId || "").trim();
+  const candidateIds = [];
+  if (cleanId.startsWith("ICB")) {
+    candidateIds.push(cleanId, cleanId.replace(/^ICB/, ""));
+  } else {
+    candidateIds.push(`ICB${cleanId}`, cleanId);
   }
 
-  const endpoint = "http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList";
-  const url = `${endpoint}?serviceKey=${safeKey.encodedKey}&cityCode=22&nodeId=${encodeURIComponent(tagoNodeId)}&pageNo=1&numOfRows=30&_type=json`;
+  const endpoint = "https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList";
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3500);
+  for (const tagoNodeId of candidateIds) {
+    const url = `${endpoint}?serviceKey=${safeKey.encodedKey}&cityCode=23&nodeId=${encodeURIComponent(tagoNodeId)}&pageNo=1&numOfRows=30&_type=json`;
 
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    if (!res.ok) return null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    const data = await res.json();
-    const header = data?.response?.header;
-    if (header?.resultCode !== "00" && header?.resultCode !== "0") {
-      return null;
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const header = data?.response?.header;
+      if (header?.resultCode !== "00" && header?.resultCode !== "0") {
+        continue;
+      }
+
+      const rawItems = data?.response?.body?.items?.item;
+      let items = [];
+      if (Array.isArray(rawItems)) items = rawItems;
+      else if (rawItems) items = [rawItems];
+
+      if (items.length > 0) {
+        return items.map(item => ({
+          ROUTE_NO: String(item.routeno || ""),
+          ROUTE_ID: String(item.routeid || ""),
+          REST_STOP_COUNT: Number(item.arrprevstationcnt || 0),
+          ARRIVALESTIMATETIME: Number(item.arrtime || 0),
+          LATEST_STOP_NAME: `${item.arrprevstationcnt || 1}정류소 전`,
+          BUS_NUM_PLATE: "",
+          CONGESTION: 3,
+          LOW_TP_CD: (item.vehicletp && item.vehicletp.includes("저상")) ? 1 : 0,
+          DIR_DESC: `${item.routetp || "간선"} · TAGO 실시간`,
+          NODE_NAME: item.nodenm || ""
+        })).filter(b => b.ROUTE_NO !== "");
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      continue;
     }
-
-    const rawItems = data?.response?.body?.items?.item;
-    let items = [];
-    if (Array.isArray(rawItems)) items = rawItems;
-    else if (rawItems) items = [rawItems];
-
-    if (items.length === 0) return [];
-
-    return items.map(item => ({
-      ROUTE_NO: String(item.routeno || ""),
-      ROUTE_ID: String(item.routeid || ""),
-      REST_STOP_COUNT: Number(item.arrprevstationcnt || 0),
-      ARRIVALESTIMATETIME: Number(item.arrtime || 0),
-      LATEST_STOP_NAME: `${item.arrprevstationcnt || 1}정류소 전`,
-      BUS_NUM_PLATE: "",
-      CONGESTION: 3,
-      LOW_TP_CD: (item.vehicletp && item.vehicletp.includes("저상")) ? 1 : 0,
-      DIR_DESC: "제물포고 방면 (TAGO 실시간)"
-    })).filter(b => b.ROUTE_NO !== "");
-  } catch (err) {
-    clearTimeout(timeoutId);
-    return null;
   }
+
+  return null;
 }
 
 /**
