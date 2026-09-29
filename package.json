@@ -1,0 +1,17 @@
+{
+  "name": "galaxy-bus-companion",
+  "version": "1.0.0",
+  "description": "갤럭시 최적화 버스 도착 및 등교 알림 PWA 서비스",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "fast-xml-parser": "^4.5.3"
+  }
+}

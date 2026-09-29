@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Galaxy Transit - 모닝 버스 & 캠퍼스 브리퍼</title>
+  <meta name="description" content="갤럭시 알람 해제 연동 실시간 버스 도착 정보 및 캠퍼스 하차 브리핑 서비스">
+  <meta name="theme-color" content="#080A10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- 모바일 쉘 컨테이너 (갤럭시 프레임) -->
+  <main class="device-container" id="app-container">
+    
+    <!-- 갤럭시 One UI 스타일 상태바 -->
+    <header class="status-bar" aria-label="기기 상태">
+      <span class="status-time" id="status-clock">08:15</span>
+      <div class="status-indicators">
+        <span class="badge-live-dot" title="실시간 BIS 연동 중"></span>
+        <span id="network-badge">5G</span>
+        <span>⚡ 98%</span>
+      </div>
+    </header>
+
+    <!-- 앱 브랜드 헤더 -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">🚌</div>
+        <div>
+          <h1 class="brand-title">Galaxy Transit</h1>
+          <p class="brand-subtitle">모닝 버스 & 캠퍼스 브리퍼</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-refresh" title="실시간 버스 새로고침" aria-label="새로고침">
+          🔄
+        </button>
+        <button class="btn-icon" id="btn-settings-open" title="설정 및 루틴 연동" aria-label="설정">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- 네비게이션 탭 바 (모드 전환) -->
+    <nav class="nav-tab-bar" aria-label="모드 전환 네비게이션">
+      <button class="tab-btn active" data-tab="wake" id="tab-wake">
+        <span class="tab-icon">🌅</span>
+        <span>모닝 버스</span>
+      </button>
+      <button class="tab-btn" data-tab="transit" id="tab-transit">
+        <span class="tab-icon">🚌</span>
+        <span>탑승 모드</span>
+      </button>
+      <button class="tab-btn" data-tab="arrival" id="tab-arrival">
+        <span class="tab-icon">🎓</span>
+        <span>하차 브리핑</span>
+      </button>
+      <button class="tab-btn" data-tab="routine" id="tab-routine">
+        <span class="tab-icon">📱</span>
+        <span>갤럭시 루틴</span>
+      </button>
+    </nav>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <div class="main-content">
+
+      <!-- ==========================================
+           TAB 1: 모닝 알람 뷰 (Morning Wake)
+           ========================================== -->
+      <section class="view-section active" id="view-wake" aria-labelledby="heading-wake">
+        <h2 id="heading-wake" class="visually-hidden" style="display:none;">모닝 버스 도착 정보</h2>
+
+        <!-- 트리거 배너 (갤럭시 알람 연동 표시) -->
+        <div class="trigger-banner" id="wake-trigger-banner">
+          <div class="trigger-info">
+            <span class="trigger-badge">ALARM OFF</span>
+            <span>알람 해제 감지 → 실시간 버스 로드</span>
+          </div>
+          <span style="font-size: 11px; color: var(--accent-cyan);" id="live-sync-indicator">🟢 15초 자동갱신</span>
+        </div>
+
+        <!-- 설정된 정류소 정보 -->
+        <article class="station-card">
+          <div class="station-top">
+            <div>
+              <div class="station-name" id="current-station-name">인하대후문</div>
+              <div class="station-dir" id="current-station-dir">주안역 방면 · 인천광역시</div>
+            </div>
+            <span class="station-ars" id="current-station-ars">37155</span>
+          </div>
+          <button class="btn-secondary" id="btn-change-station" style="margin-top: 10px; width: 100%; font-size: 11px;">
+            📍 정류장 변경 (인천시 내)
+          </button>
+        </article>
+
+        <!-- HERO 빠른 버스 (가장 먼저 탈 버스) -->
+        <article class="hero-bus-card" id="hero-bus-card">
+          <div class="hero-header">
+            <div class="bus-badge-lg" id="hero-bus-no">511번</div>
+            <span class="meta-chip highlight" id="hero-bus-status">도착 곧 임박</span>
+          </div>
+
+          <div class="hero-countdown-wrap">
+            <div class="countdown-digits">
+              <span class="time-main" id="hero-time-text">2분 45초</span>
+              <span class="time-detail" id="hero-stops-text">2번째 전 정류장 (인하대병원)</span>
+            </div>
+
+            <!-- 원형 카운트다운 게이지 -->
+            <div class="circle-progress" aria-hidden="true">
+              <svg width="90" height="90">
+                <circle class="circle-bg" cx="45" cy="45" r="38"></circle>
+                <circle class="circle-bar" id="hero-circle-bar" cx="45" cy="45" r="38"></circle>
+              </svg>
+              <div class="circle-label" id="hero-circle-pct">75%</div>
+            </div>
+          </div>
+
+          <!-- 버스 상세 메타 칩 -->
+          <div class="meta-chips">
+            <span class="meta-chip" id="hero-bus-plate">인천70바 1284</span>
+            <span class="meta-chip" id="hero-bus-lowfloor">♿ 저상버스</span>
+            <span class="meta-chip" id="hero-bus-crowd">👥 보통 (여유)</span>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <button class="btn-primary" id="btn-board-hero" style="flex: 1;">
+              🚀 이 버스 탑승 (등교 추적 시작)
+            </button>
+          </div>
+        </article>
+
+        <!-- 기타 도착 예정 버스 목록 -->
+        <div class="section-title-wrap">
+          <span class="section-title">다른 도착 버스</span>
+          <span style="font-size: 12px; color: var(--text-muted);" id="bus-count-label">3개 노선 운행 중</span>
+        </div>
+
+        <div class="bus-list" id="other-buses-list">
+          <!-- JS에서 동적 주입 -->
+        </div>
+      </section>
+
+      <!-- ==========================================
+           TAB 2: 탑승 모드 (Transit Tracker)
+           ========================================== -->
+      <section class="view-section" id="view-transit" aria-labelledby="heading-transit">
+        <h2 id="heading-transit" class="visually-hidden" style="display:none;">탑승 중 버스 실시간 위치</h2>
+
+        <div class="transit-hero">
+          <span class="transit-status-badge">현재 운행 중</span>
+          <div class="transit-remain-huge" id="transit-remain-stops">3 정류장</div>
+          <p style="color: var(--text-secondary); font-size: 14px;">
+            하차 정류장: <strong style="color: white;" id="transit-target-name">인천대학교자연과학대학</strong>
+          </p>
+          <p style="color: var(--accent-cyan); font-size: 12px; margin-top: 6px;">
+            예상 도착: 약 6분 후 (08:24경)
+          </p>
+        </div>
+
+        <!-- 하차 노선 프로그레스 바 -->
+        <div class="station-card">
+          <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">
+            🗺️ 경유 정류소 현황
+          </div>
+          <div class="route-progress-line" id="route-line-wrap">
+            <div class="route-track"></div>
+            <div class="route-track-fill" id="route-fill-bar"></div>
+
+            <div class="stop-node passed">
+              <div class="node-circle">✓</div>
+              <span class="node-label">탑승 정류장</span>
+            </div>
+            <div class="stop-node current">
+              <div class="node-circle">🚌</div>
+              <span class="node-label">현재 정류소</span>
+            </div>
+            <div class="stop-node">
+              <div class="node-circle">·</div>
+              <span class="node-label">경유 정류소</span>
+            </div>
+            <div class="stop-node target">
+              <div class="node-circle">🎓</div>
+              <span class="node-label">학교(하차)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 하차 진동 알림 시뮬레이션 -->
+        <div class="station-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 700; font-size: 15px;">🔔 하차 전 진동 알림</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                목표 정류장 2정거장 전 자동 진동 피드백
+              </div>
+            </div>
+            <button class="btn-secondary" id="btn-test-vibrate">진동 테스트</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-simulate-arrive" style="width: 100%; margin-top: 10px;">
+          📍 [시뮬레이션] 학교 정류장에 방금 하차함!
+        </button>
+      </section>
+
+      <!-- ==========================================
+           TAB 3: 하차 브리핑 (Campus Arrival)
+           ========================================== -->
+      <section class="view-section" id="view-arrival" aria-labelledby="heading-arrival">
+        <h2 id="heading-arrival" class="visually-hidden" style="display:none;">캠퍼스 도착 일정표</h2>
+
+        <div class="campus-header-card">
+          <div class="campus-greeting" id="arrival-greeting">🎓 학교 도착을 환영합니다!</div>
+          <div class="campus-sub" id="arrival-today-date">2026.09.29 (화) · 오늘의 캠퍼스 브리핑</div>
+
+          <div class="weather-widget">
+            <div>
+              <span style="font-size: 24px; margin-right: 6px;">☀️</span>
+              <strong style="font-size: 16px;">19°C 맑음</strong>
+              <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">미세먼지 좋음 · 강수확률 10%</div>
+            </div>
+            <span style="font-size: 11px; padding: 4px 8px; background: rgba(0, 245, 155, 0.15); color: var(--accent-green); border-radius: var(--radius-pill); font-weight: 700;">
+              우산 불필요
+            </span>
+          </div>
+        </div>
+
+        <!-- 오늘의 강의 및 일정 -->
+        <div class="section-title-wrap">
+          <span class="section-title">오늘의 강의 & 일정표</span>
+          <span style="font-size: 12px; color: var(--accent-cyan);">3개 일정</span>
+        </div>
+
+        <div class="schedule-timeline" id="schedule-list-wrap">
+          <!-- JS 주입 -->
+        </div>
+
+        <!-- 학사 공지 및 메모 -->
+        <div class="station-card" style="margin-top: 20px;">
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">📌 오늘의 중요 알림</div>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+            <li>• <strong>알고리즘 2차 과제</strong> 마감: 오늘 23:59까지 (LMS 제출)</li>
+            <li>• <strong>중간고사 시험 기간</strong> D-14 도서관 24시간 개방</li>
+          </ul>
+        </div>
+
+        <button class="btn-secondary" id="btn-trigger-push" style="width: 100%; margin-top: 14px;">
+          📲 웹 푸시 알림으로 다시 발송받기
+        </button>
+      </section>
+
+      <!-- ==========================================
+           TAB 4: 갤럭시 루틴 연동 가이드 (Routine Guide)
+           ========================================== -->
+      <section class="view-section" id="view-routine" aria-labelledby="heading-routine">
+        <h2 id="heading-routine" class="visually-hidden" style="display:none;">갤럭시 모드 및 루틴 설정 가이드</h2>
+
+        <div class="routine-box">
+          <h3 style="font-size: 17px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan);">
+            📱 갤럭시 '모드 및 루틴' 1분 연동법
+          </h3>
+          <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+            삼성 갤럭시 스마트폰의 기본 앱인 <strong>[모드 및 루틴]</strong>을 사용하면, 아침에 알람을 끄자마자 본 웹앱이 자동으로 팝업되고, 학교 도착 시 일정표가 자동 발송됩니다.
+          </p>
+
+          <!-- Step 1 -->
+          <div class="routine-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">루틴 #1: 아침 알람 끄면 버스 시간 보기</div>
+              <div class="step-desc">
+                [모드 및 루틴] → [+] 추가 → <strong>언제 실행할까요: [알람 해제될 때]</strong> 선택 (등교 알람 지정)
+                → <strong>무엇을 할까요: [웹사이트 열기]</strong> 선택 후 아래 URL 붙여넣기
+              </div>
+              <div class="copy-link-box">
+                <input class="copy-input" id="copy-url-wake" readonly value="http://localhost:3000/?mode=wake">
+                <button class="btn-secondary btn-copy" data-target="copy-url-wake">복사</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="routine-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">루틴 #2: 학교 정류장 하차 시 일정표 보기</div>
+              <div class="step-desc">
+                [모드 및 루틴] → [+] 추가 → <strong>언제 실행할까요: [장소: 학교 정류장 도착 시]</strong> 또는 <strong>[학교 Wi-Fi 연결 시]</strong>
+                → <strong>무엇을 할까요: [웹사이트 열기]</strong> 선택 후 아래 URL 붙여넣기
+              </div>
+              <div class="copy-link-box">
+                <input class="copy-input" id="copy-url-arrival" readonly value="http://localhost:3000/?mode=arrival">
+                <button class="btn-secondary btn-copy" data-target="copy-url-arrival">복사</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 공공데이터포털 API 키 등록 카드 -->
+        <div class="station-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 6px;">
+            🔑 공공데이터포털 API 키 연동
+          </h3>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+            발급받으신 인천광역시 버스도착정보 일반 인증키(Encoding/Decoding)를 입력하시면 즉시 실시간 인천 BIS와 직접 통신합니다. (키가 없으면 스마트 모의 데이터셋이 동작합니다)
+          </p>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="input-api-key" placeholder="공공데이터포털 인증키 입력..." class="copy-input" style="flex: 1;">
+            <button class="btn-primary" id="btn-save-key">저장</button>
+          </div>
+          <div id="key-status-msg" style="font-size: 11px; margin-top: 8px; color: var(--accent-green);"></div>
+        </div>
+
+        <!-- 홈 화면 추가 가이드 -->
+        <div class="station-card">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 6px;">
+            📲 갤럭시 홈 화면에 앱으로 추가하기
+          </h3>
+          <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            삼성 인터넷 또는 크롬 브라우저 오른쪽 상단 <strong>[⋮] 메뉴 → [홈 화면에 추가]</strong>를 누르시면 상단 주소창 없는 100% 네이티브 갤럭시 앱처럼 동작합니다.
+          </p>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 플로팅 하단 컨트롤러 -->
+    <aside class="floating-actions" aria-label="빠른 실행 도구">
+      <button class="btn-secondary" id="btn-sound-toggle" style="font-size: 11px;">
+        🔊 소리 알림
+      </button>
+      <div style="font-size: 11px; color: var(--text-muted);" id="last-updated-clock">
+        방금 전 갱신
+      </div>
+      <button class="btn-secondary" id="btn-quick-alarm" style="font-size: 11px; color: var(--accent-yellow);">
+        ⏰ 알람 끄기 시뮬레이션
+      </button>
+    </aside>
+
+  </main>
+
+  <!-- 토스트 알림 컴포넌트 -->
+  <div class="toast-msg" id="toast-msg" role="status" aria-live="polite">알림 메시지</div>
+
+  <!-- 정류장 선택 모달 -->
+  <dialog id="modal-station" style="border:none; background:transparent; padding:0; width:100%; max-width:440px; margin:auto;">
+    <div style="background: var(--bg-secondary); border:1px solid var(--border-subtle); border-radius: var(--radius-lg); padding:24px; box-shadow: var(--shadow-card);">
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 12px;">📍 정류장 검색 / 선택</h3>
+      <input type="text" id="modal-station-search" placeholder="정류장 이름 입력 (예: 인하대, 주안역...)" class="copy-input" style="width:100%; margin-bottom:12px;">
+      <div id="modal-station-results" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;">
+        <!-- 목록 주입 -->
+      </div>
+      <button class="btn-secondary" id="btn-modal-close" style="width:100%; margin-top:16px;">닫기</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "Galaxy Transit - 모닝 버스 & 캠퍼스 브리퍼",
+  "short_name": "모닝 버스",
+  "description": "갤럭시 알람 해제 연동 실시간 버스 도착 및 캠퍼스 하차 브리핑 서비스",
+  "start_url": "/?mode=wake",
+  "display": "standalone",
+  "background_color": "#090A0F",
+  "theme_color": "#090A0F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
