@@ -139,6 +139,138 @@ function updateLiveClock() {
 setInterval(updateLiveClock, 1000);
 updateLiveClock();
 
+// 하차 목적지: 제물포고등학교 (송월아파트)
+const JEMULPO_DESTINATION = {
+  bstopNm: "송월아파트(제물포고 앞)",
+  arsId: "35193",
+  lat: 37.4776,
+  lng: 126.6198
+};
+
+// 하버사인 직선 거리 계산 (km)
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// 실시간 탑승 모드 동적 경로 및 정류장 수 연산
+function updateTransitTracker() {
+  const origin = state.currentStation || { bstopNm: "출발 정류장", lat: 37.4763, lng: 126.6329 };
+  const originName = origin.bstopNm || "출발 정류장";
+  const busNo = state.heroBus ? `${state.heroBus.ROUTE_NO}번` : "등교 버스";
+
+  let roadDistanceKm = 0;
+  let totalStops = 0;
+  let etaMinutes = 0;
+
+  if (origin.lat && origin.lng) {
+    const straightKm = calculateHaversineDistance(origin.lat, origin.lng, JEMULPO_DESTINATION.lat, JEMULPO_DESTINATION.lng);
+    roadDistanceKm = Math.max(0.9, straightKm * 1.35); // 굴곡도 반영 시내 도로 거리
+    totalStops = Math.max(2, Math.round(roadDistanceKm / 0.5)); // 평균 정류장 간격 500m
+    etaMinutes = Math.max(4, Math.round(totalStops * 1.4)); // 정류소당 평균 1.4분
+  } else {
+    // 좌표가 없는 경우 정류소 명칭/지역 기반 추론
+    if (originName.includes("송도") || originName.includes("인천대") || originName.includes("연수")) {
+      roadDistanceKm = 15.6;
+      totalStops = 31;
+      etaMinutes = 43;
+    } else if (originName.includes("부평") || originName.includes("계양") || originName.includes("작전")) {
+      roadDistanceKm = 11.4;
+      totalStops = 23;
+      etaMinutes = 32;
+    } else if (originName.includes("주안") || originName.includes("인하대") || originName.includes("용현")) {
+      roadDistanceKm = 5.2;
+      totalStops = 11;
+      etaMinutes = 16;
+    } else if (originName.includes("동인천") || originName.includes("신포") || originName.includes("인일여고") || originName.includes("자유공원")) {
+      roadDistanceKm = 1.0;
+      totalStops = 2;
+      etaMinutes = 4;
+    } else {
+      roadDistanceKm = 8.5;
+      totalStops = 17;
+      etaMinutes = 24;
+    }
+  }
+
+  // 도착 예정 시각 (현재 시각 + etaMinutes)
+  const now = new Date();
+  const arrivalDate = new Date(now.getTime() + etaMinutes * 60000);
+  const arrH = String(arrivalDate.getHours()).padStart(2, "0");
+  const arrM = String(arrivalDate.getMinutes()).padStart(2, "0");
+
+  // DOM 갱신
+  const badgeEl = document.getElementById("transit-bus-badge");
+  const remainStopsEl = document.getElementById("transit-remain-stops");
+  const originNameEl = document.getElementById("transit-origin-name");
+  const targetNameEl = document.getElementById("transit-target-name");
+  const etaTextEl = document.getElementById("transit-eta-text");
+  const distInfoEl = document.getElementById("transit-dist-info");
+  const vibrateDescEl = document.getElementById("transit-vibrate-desc");
+  const routeLineWrap = document.getElementById("route-line-wrap");
+
+  if (badgeEl) badgeEl.textContent = `🚌 ${busNo} 탑승 운행 중`;
+  if (remainStopsEl) remainStopsEl.textContent = `${totalStops} 정류장`;
+  if (originNameEl) originNameEl.textContent = originName;
+  if (targetNameEl) targetNameEl.textContent = JEMULPO_DESTINATION.bstopNm;
+  if (etaTextEl) etaTextEl.textContent = `예상 도착: 약 ${etaMinutes}분 후 (${arrH}:${arrM}경) · 제물포고 도보 3분`;
+  if (distInfoEl) distInfoEl.textContent = `약 ${roadDistanceKm.toFixed(1)} km 주행`;
+  if (vibrateDescEl) {
+    vibrateDescEl.textContent = totalStops <= 2 
+      ? `📳 하차 2정거장 이내 접근! 곧 제물포고에 도착합니다.` 
+      : `송월아파트 2정거장 전 자동 진동 알림 대기 중 (현재 ${totalStops}정류장 남음)`;
+  }
+
+  // 동적 통학 노선 타임라인 생성
+  if (routeLineWrap) {
+    let milestones = [];
+    if (totalStops <= 4) {
+      milestones = [
+        { label: originName, status: "passed", icon: "✓" },
+        { label: "동인천역북광장", status: "current", icon: "🚌" },
+        { label: "송월아파트(제물포고)", status: "target", icon: "🏫" }
+      ];
+    } else if (totalStops <= 15) {
+      milestones = [
+        { label: originName, status: "passed", icon: "✓" },
+        { label: "용현사거리", status: "passed", icon: "·" },
+        { label: "제물포역", status: "current", icon: "🚌" },
+        { label: "동인천역", status: "", icon: "·" },
+        { label: "송월아파트(제물포고)", status: "target", icon: "🏫" }
+      ];
+    } else {
+      milestones = [
+        { label: originName, status: "passed", icon: "✓" },
+        { label: "연수/원인재", status: "passed", icon: "·" },
+        { label: "인하대입구", status: "current", icon: "🚌" },
+        { label: "동인천역", status: "", icon: "·" },
+        { label: "송월아파트(제물포고)", status: "target", icon: "🏫" }
+      ];
+    }
+
+    const currentIdx = milestones.findIndex(m => m.status === "current");
+    const pct = Math.max(20, Math.round(((currentIdx + 0.5) / milestones.length) * 100));
+
+    routeLineWrap.innerHTML = `
+      <div class="route-track"></div>
+      <div class="route-track-fill" id="route-fill-bar" style="width: ${pct}%;"></div>
+      ${milestones.map(m => `
+        <div class="stop-node ${m.status}">
+          <div class="node-circle">${m.icon}</div>
+          <span class="node-label">${m.label}</span>
+        </div>
+      `).join("")}
+    `;
+  }
+}
+
 // ==========================================
 // 4. 모드 전환 & 딥링크 라우팅
 // ==========================================
@@ -167,6 +299,7 @@ function setTabMode(mode, triggerFromDeepLink = false) {
     startAutoRefresh();
   } else if (mode === "transit") {
     stopAutoRefresh();
+    updateTransitTracker();
     showToast("🚌 등교 버스 탑승 모드로 전환되었습니다.");
   } else if (mode === "arrival") {
     stopAutoRefresh();
