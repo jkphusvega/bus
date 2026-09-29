@@ -223,8 +223,17 @@ setInterval(() => {
   mockOffsetSeconds = (mockOffsetSeconds + 2) % 3600;
 }, 2000);
 
-export function getMockArrivalList(bstopId) {
-  const station = MOCK_STATIONS.find(s => s.bstopId === bstopId) || MOCK_STATIONS[0];
+export function getMockArrivalList(bstopId, customMeta = {}) {
+  let station = MOCK_STATIONS.find(s => s.bstopId === bstopId);
+  if (!station) {
+    station = {
+      bstopId: bstopId || "CUSTOM",
+      bstopNm: customMeta.bstopNm || "등교 정류소",
+      arsId: customMeta.arsId || "",
+      routes: customMeta.routes || ["15", "28", "45", "511"],
+      dirDesc: customMeta.dirDesc || "제물포고 방면 (사용자 지정)"
+    };
+  }
   const routeList = station.routes || ["45", "15", "28"];
 
   const mockBuses = routeList.map((routeNo, idx) => {
@@ -237,12 +246,12 @@ export function getMockArrivalList(bstopId) {
     else if (idx === 1) crowd = 5;
 
     return {
-      ROUTE_NO: routeNo,
+      ROUTE_NO: String(routeNo),
       ROUTE_ID: `161000${String(idx).padStart(3, "0")}`,
       REST_STOP_COUNT: restStops,
       ARRIVALESTIMATETIME: estTime,
       LATEST_STOP_NAME: `${restStops}정거장 전 (${idx === 0 ? "차이나타운 입구" : "동인천역 지하도"})`,
-      BUS_NUM_PLATE: `인천70바 ${3100 + (parseInt(routeNo.replace(/[^0-9]/g, "")) || 10) * 23 % 6000}`,
+      BUS_NUM_PLATE: `인천70바 ${3100 + (parseInt(String(routeNo).replace(/[^0-9]/g, "")) || 10) * 23 % 6000}`,
       CONGESTION: crowd,
       LOW_TP_CD: idx % 2 === 0 ? 1 : 0,
       DIR_DESC: station.dirDesc || "제물포고 방면"

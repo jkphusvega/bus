@@ -35,9 +35,14 @@ app.get("/api/stations", async (req, res) => {
 app.get("/api/arrivals", async (req, res) => {
   const bstopId = req.query.bstopId || "163000155"; // 기본: 인하대후문
   const apiKey = req.query.apiKey || runtimeApiKey || process.env.DATA_GO_KR_API_KEY;
+  const customMeta = {
+    bstopNm: req.query.bstopNm,
+    arsId: req.query.arsId,
+    dirDesc: req.query.dirDesc
+  };
 
   try {
-    const data = await fetchBusArrivals(bstopId, apiKey);
+    const data = await fetchBusArrivals(bstopId, apiKey, customMeta);
     res.json({
       success: true,
       hasApiKey: !!(apiKey && apiKey.trim() !== ""),

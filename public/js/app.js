@@ -200,7 +200,10 @@ async function loadBusArrivals() {
   if (syncInd) syncInd.textContent = "🔄 갱신 중...";
 
   try {
-    const res = await fetch(`/api/arrivals?bstopId=${state.currentStationId}`);
+    const metaParams = state.currentStation 
+      ? `&bstopNm=${encodeURIComponent(state.currentStation.bstopNm || "")}&arsId=${encodeURIComponent(state.currentStation.arsId || "")}&dirDesc=${encodeURIComponent(state.currentStation.dirDesc || "")}`
+      : "";
+    const res = await fetch(`/api/arrivals?bstopId=${state.currentStationId}${metaParams}`);
     const data = await res.json();
 
     if (data.success && data.arrivals) {
