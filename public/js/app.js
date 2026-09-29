@@ -670,6 +670,38 @@ function initApp() {
     });
   }
 
+  // 정류소 직접 등록 핸들러 (오차 0% 실사용 모드)
+  const btnSaveCustomStation = document.getElementById("btn-save-custom-station");
+  if (btnSaveCustomStation) {
+    btnSaveCustomStation.addEventListener("click", () => {
+      const nameInput = document.getElementById("custom-station-name");
+      const arsInput = document.getElementById("custom-station-ars");
+      const name = nameInput ? nameInput.value.trim() : "";
+      const ars = arsInput ? arsInput.value.trim() : "";
+
+      if (!name) {
+        showToast("정류소 이름을 입력해 주세요.");
+        return;
+      }
+
+      const customStation = {
+        bstopId: ars ? `161${ars}` : `CUSTOM_${Date.now()}`,
+        bstopNm: name,
+        arsId: ars || "직접등록",
+        dirDesc: "사용자 지정 등교 정류소"
+      };
+
+      state.currentStationId = customStation.bstopId;
+      state.currentStation = customStation;
+      localStorage.setItem("galaxy_bus_station_id", customStation.bstopId);
+      localStorage.setItem("galaxy_bus_station", JSON.stringify(customStation));
+
+      document.getElementById("modal-station").close();
+      loadBusArrivals();
+      showToast(`[${name}] 정류소가 완벽하게 등록되었습니다!`);
+    });
+  }
+
   const searchInput = document.getElementById("modal-station-search");
   if (searchInput) {
     let debounce;

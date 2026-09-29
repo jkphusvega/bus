@@ -363,11 +363,26 @@
         <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">📍 인천 버스 정류장 검색</h3>
         <span style="font-size: 11px; color: var(--accent-cyan); font-weight: 700;">실시간 BIS 연동</span>
       </div>
-      <input type="text" id="modal-station-search" placeholder="정류장 명칭 검색 (예: 인하대, 주안역, 부평, 송도...)" class="copy-input" style="width:100%; margin-bottom:14px; box-sizing:border-box;">
-      <div id="modal-station-results" style="display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; padding-right:4px;">
+      <input type="text" id="modal-station-search" placeholder="정류장 명칭 검색 (예: 동인천, 주안역, 부평, 신포...)" class="copy-input" style="width:100%; margin-bottom:14px; box-sizing:border-box;">
+      <div id="modal-station-results" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;">
         <!-- 목록 주입 -->
       </div>
-      <button class="btn-secondary" id="btn-modal-close" style="width:100%; margin-top:16px; padding:12px; font-weight:700;">닫기</button>
+
+      <!-- 정류장 직접 입력 & 등록 (오차 0% 모드) -->
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15);">
+        <div style="font-size:12px; font-weight:700; color:var(--accent-cyan); margin-bottom:6px;">
+          ✍️ 찾는 정류소가 없나요? 직접 등록 (오차 0%)
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+          <input type="text" id="custom-station-name" placeholder="정류소 이름 (예: 인일여고, 명신여고)" class="copy-input" style="flex:1; font-size:12px; padding:8px 10px;">
+          <input type="text" id="custom-station-ars" placeholder="ARS 번호 5자리" class="copy-input" style="width:110px; font-size:12px; padding:8px 10px;">
+        </div>
+        <button class="btn-primary" id="btn-save-custom-station" style="width:100%; padding:8px; font-size:12px; font-weight:700;">
+          이 정류장으로 등록하기
+        </button>
+      </div>
+
+      <button class="btn-secondary" id="btn-modal-close" style="width:100%; margin-top:12px; padding:10px; font-weight:700;">닫기</button>
     </div>
   </dialog>
 
