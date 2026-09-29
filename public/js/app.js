@@ -421,15 +421,24 @@ async function loadCampusBriefing() {
     if (data.success) {
       if (dateEl) dateEl.textContent = `${data.date} · 오늘의 캠퍼스 브리핑`;
 
-      if (listWrap && data.defaultSchedules) {
-        listWrap.innerHTML = data.defaultSchedules.map((item, idx) => `
+      // 사용자가 직접 저장한 시간표가 있으면 우선 사용
+      const activeSchedules = state.schedules && state.schedules.length > 0 
+        ? state.schedules 
+        : data.defaultSchedules;
+
+      if (!state.schedules) {
+        state.schedules = data.defaultSchedules;
+      }
+
+      if (listWrap && activeSchedules) {
+        listWrap.innerHTML = activeSchedules.map((item, idx) => `
           <div class="schedule-card ${idx === 0 ? "active-class" : ""}">
             <div class="schedule-time-row">
               <span class="schedule-time">⏰ ${item.time}</span>
-              <span class="schedule-badge">${item.badge}</span>
+              <span class="schedule-badge">${item.badge || "수업"}</span>
             </div>
             <div class="schedule-title">${item.title}</div>
-            <div class="schedule-room">📍 ${item.room} · ${item.professor}</div>
+            <div class="schedule-room">📍 ${item.room || "강의실"} · ${item.professor || ""}</div>
           </div>
         `).join("");
       }
@@ -437,6 +446,75 @@ async function loadCampusBriefing() {
   } catch (err) {
     console.error("Campus briefing load error:", err);
   }
+}
+
+// 시간표 편집 모달 오픈 및 렌더링
+function openScheduleModal() {
+  const modal = document.getElementById("modal-schedule");
+  const listEl = document.getElementById("schedule-edit-list");
+  if (!modal || !listEl) return;
+
+  const currentList = state.schedules || [];
+  renderScheduleEditRows(currentList);
+  modal.showModal();
+}
+
+function renderScheduleEditRows(schedules) {
+  const listEl = document.getElementById("schedule-edit-list");
+  if (!listEl) return;
+
+  listEl.innerHTML = schedules.map((item, idx) => `
+    <div class="schedule-edit-row" data-idx="${idx}" style="background:#182236; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; font-weight:700; color:#00F5FF;">수업 #${idx + 1}</span>
+        <button type="button" class="btn-delete-row" data-idx="${idx}" style="background:none; border:none; color:#FF5C8A; font-size:12px; cursor:pointer; font-weight:700;">삭제</button>
+      </div>
+      <input type="text" class="copy-input edit-title" placeholder="과목명 (예: 컴퓨터구조)" value="${item.title || ""}" style="font-size:13px; padding:6px 10px;">
+      <div style="display:flex; gap:6px;">
+        <input type="text" class="copy-input edit-time" placeholder="시간 (예: 10:00 - 11:15)" value="${item.time || ""}" style="flex:1; font-size:12px; padding:6px 8px;">
+        <input type="text" class="copy-input edit-room" placeholder="강의실 (예: 5남 302호)" value="${item.room || ""}" style="flex:1; font-size:12px; padding:6px 8px;">
+      </div>
+    </div>
+  `).join("");
+
+  listEl.querySelectorAll(".btn-delete-row").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.idx);
+      schedules.splice(idx, 1);
+      renderScheduleEditRows(schedules);
+    });
+  });
+}
+
+function saveEditedSchedule() {
+  const listEl = document.getElementById("schedule-edit-list");
+  if (!listEl) return;
+
+  const rows = listEl.querySelectorAll(".schedule-edit-row");
+  const newSchedules = [];
+
+  rows.forEach((row, idx) => {
+    const title = row.querySelector(".edit-title")?.value.trim();
+    const time = row.querySelector(".edit-time")?.value.trim();
+    const room = row.querySelector(".edit-room")?.value.trim();
+
+    if (title) {
+      newSchedules.push({
+        id: idx + 1,
+        title,
+        time: time || "시간 미정",
+        room: room || "강의실 미정",
+        professor: "",
+        badge: "수업"
+      });
+    }
+  });
+
+  state.schedules = newSchedules;
+  localStorage.setItem("galaxy_bus_schedules", JSON.stringify(newSchedules));
+  document.getElementById("modal-schedule").close();
+  loadCampusBriefing();
+  showToast("내 시간표가 스마트폰에 영구 저장되었습니다!");
 }
 
 // ==========================================
@@ -501,17 +579,22 @@ async function searchStations(q) {
     const res = await fetch(`/api/stations?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     if (data.success && data.stations) {
+      if (data.stations.length === 0) {
+        resContainer.innerHTML = `<div style="text-align:center; padding:24px; color:#94A3B8; font-size:13px;">일치하는 정류소가 없습니다.</div>`;
+        return;
+      }
+
       resContainer.innerHTML = data.stations.map((st) => `
-        <div class="bus-card-item" data-id="${st.bstopId}" style="padding:12px;">
+        <div class="station-result-item" data-id="${st.bstopId}" style="display:flex; justify-content:space-between; align-items:center; background:#182236; border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:14px 16px; margin-bottom:8px; cursor:pointer; transition:all 0.2s ease;">
           <div>
-            <strong style="font-size:14px;">${st.bstopNm}</strong>
-            <div style="font-size:11px; color:var(--text-muted);">ARS: ${st.arsId || st.bstopId}</div>
+            <div style="font-size:15px; font-weight:800; color:#FFFFFF;">${st.bstopNm}</div>
+            <div style="font-size:11px; color:#00F5FF; margin-top:3px; font-weight:600;">ARS ${st.arsId || st.bstopId} · <span style="color:#CBD5E1;">${st.dirDesc || (st.routes && st.routes.length ? st.routes.slice(0, 5).join(', ') + '번 등' : '')}</span></div>
           </div>
-          <button class="btn-secondary" style="font-size:11px; padding:4px 10px;">선택</button>
+          <button class="btn-secondary" style="font-size:11px; padding:6px 12px; background:rgba(0,245,255,0.12); color:#00F5FF !important; border:1px solid rgba(0,245,255,0.3); font-weight:700;">선택</button>
         </div>
       `).join("");
 
-      resContainer.querySelectorAll(".bus-card-item").forEach((card) => {
+      resContainer.querySelectorAll(".station-result-item").forEach((card) => {
         card.addEventListener("click", () => {
           const id = card.dataset.id;
           state.currentStationId = id;
@@ -670,6 +753,39 @@ function initApp() {
       } else {
         showToast("이 브라우저는 알림을 지원하지 않습니다.");
       }
+    });
+  }
+
+  // 14. 시간표 편집 모달 이벤트
+  const btnEditSchedule = document.getElementById("btn-edit-schedule");
+  if (btnEditSchedule) {
+    btnEditSchedule.addEventListener("click", openScheduleModal);
+  }
+
+  const btnCloseSchedule = document.getElementById("btn-modal-schedule-close");
+  if (btnCloseSchedule) {
+    btnCloseSchedule.addEventListener("click", () => {
+      document.getElementById("modal-schedule").close();
+    });
+  }
+
+  const btnSaveSchedule = document.getElementById("btn-save-schedule");
+  if (btnSaveSchedule) {
+    btnSaveSchedule.addEventListener("click", saveEditedSchedule);
+  }
+
+  const btnAddRow = document.getElementById("btn-add-schedule-row");
+  if (btnAddRow) {
+    btnAddRow.addEventListener("click", () => {
+      const currentList = state.schedules || [];
+      currentList.push({
+        id: currentList.length + 1,
+        title: "",
+        time: "",
+        room: "",
+        badge: "수업"
+      });
+      renderScheduleEditRows(currentList);
     });
   }
 }

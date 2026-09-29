@@ -23,12 +23,12 @@
   --gradient-amber: linear-gradient(135deg, #FFBE0B 0%, #F39C12 100%);
 
   --text-primary: #FFFFFF;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-dim: #475569;
+  --text-secondary: #CBD5E1; /* 훨씬 밝은 소프트 그레이 (기존 #94A3B8 대비 상향) */
+  --text-muted: #94A3B8;     /* 가독성 있는 보조 텍스트 (기존 #64748B 대비 상향) */
+  --text-dim: #64748B;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(58, 134, 255, 0.35);
+  --border-subtle: rgba(255, 255, 255, 0.16);
+  --border-glow: rgba(0, 245, 255, 0.45);
 
   --radius-sm: 10px;
   --radius-md: 18px;
@@ -809,20 +809,59 @@ body {
   margin-top: 10px;
 }
 
+/* 전역 폼 요소 강제 가독성 부여 */
+input, select, textarea {
+  color: #FFFFFF !important;
+  font-family: inherit;
+}
+
+input::placeholder {
+  color: #94A3B8 !important;
+  opacity: 1 !important;
+}
+
 .copy-input {
   flex: 1;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--border-subtle);
+  background: #161D2E !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--text-primary);
-  font-family: monospace;
+  padding: 10px 14px;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  transition: var(--transition-smooth);
+}
+
+.copy-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan) !important;
+  background: #1C253B !important;
+  box-shadow: 0 0 14px rgba(0, 245, 255, 0.35) !important;
+}
+
+/* 정류장 모달 스타일 */
+dialog#modal-station {
+  border: 1px solid rgba(0, 245, 255, 0.35) !important;
+  border-radius: var(--radius-lg) !important;
+  background: #101422 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 245, 255, 0.2) !important;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.modal-content-wrap {
+  background: #101422;
+  color: #FFFFFF;
+  padding: 24px;
 }
 
 .btn-primary {
   background: var(--gradient-galaxy);
-  color: white;
+  color: #FFFFFF !important;
   border: none;
   border-radius: var(--radius-pill);
   padding: 10px 18px;
@@ -835,13 +874,13 @@ body {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  filter: brightness(1.1);
+  filter: brightness(1.15);
 }
 
 .btn-secondary {
-  background: var(--bg-glass);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-pill);
   padding: 8px 14px;
   font-size: 12px;
@@ -851,7 +890,8 @@ body {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* 플로팅 컨트롤러 (소리/진동/하차시뮬) */
